@@ -1,5 +1,6 @@
 'use strict';
 
+const uuid = require('uuid');
 const Path = require('path');
 const Hapi = require('hapi');
 const Inert = require('inert');
@@ -12,6 +13,35 @@ const server = new Hapi.Server({
         }
     }
 });
+
+let cards = {};
+
+function saveCard(card) {
+  let id = uuid.v1();
+  card.id = id;
+  cards[id] = card;
+}
+
+function newCardHandler(request, reply) {
+  if (request.method === 'get') {
+    reply.file('templates/new.html');
+  } else {
+    var card = {
+      name: request.payload.name,
+      recipientEmail: request.payload.recipientEmail,
+      senderName: request.payload.senderName,
+      senderEmail: request.payload.senderEmail,
+      cardImage: request.payload.cardImage
+    };
+    saveCard(card);
+    console.log(cards);
+    reply.redirect('/cards');
+  }
+}
+
+function cardsHandler(request, reply) {
+  reply.file('templates/cards.html');
+}
 
 server.connection({port: 3000});
 
@@ -42,11 +72,19 @@ server.route({
     }
 });
 
+server.route({
+  path: '/cards/new',
+  method: ['GET', 'POST'],
+  handler: newCardHandler
+});
+
+server.route({
+  path: '/cards',
+  method: 'GET',
+  handler: cardsHandler
+});
+
 server.start((err) => {
-
-  if (err) {
-      throw err;
-  }
-
+  if (err) { throw err; }
   console.log('Server running at:', server.info.uri);
 });
