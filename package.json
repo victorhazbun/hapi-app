@@ -9,6 +9,8 @@
   "author": "victor",
   "license": "ISC",
   "dependencies": {
-    "hapi": "^16.1.0"
+    "hapi": "^16.1.0",
+    "inert": "^4.1.0",
+    "path": "^0.12.7"
   }
 }
