@@ -43,6 +43,11 @@ function cardsHandler(request, reply) {
   reply.file('templates/cards.html');
 }
 
+function deleteCardHandler(request, reply) {
+  delete cards[request.params.id];
+  console.log(cards);
+}
+
 server.connection({port: 3000});
 
 server.register(Inert, () => {});
@@ -83,6 +88,13 @@ server.route({
   method: 'GET',
   handler: cardsHandler
 });
+
+server.route({
+  path: '/cards/{id}',
+  method: 'DELETE',
+  handler: deleteCardHandler
+});
+
 
 server.start((err) => {
   if (err) { throw err; }
