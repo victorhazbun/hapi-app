@@ -4,17 +4,37 @@ const uuid = require('uuid');
 const Path = require('path');
 const Hapi = require('hapi');
 const Inert = require('inert');
+const fs = require('fs');
+const Joi = require('joi');
+const Boom = require('boom');
 const server = new Hapi.Server({
-    connections: {
-        routes: {
-            files: {
-                relativeTo: Path.join(__dirname, 'public')
-            }
-        }
+  connections: {
+    routes: {
+      files: {
+        relativeTo: Path.join(__dirname, 'public')
+      }
     }
+  }
 });
 
-let cards = {};
+var cardSchema = Joi.object().keys({
+  name: Joi.string().min(3).max(50).required(),
+  recipientEmail: Joi.string().email().required(),
+  senderName: Joi.string().min(3).max(50).required(),
+  senderEmail: Joi.string().email().required(),
+  cardImage: Joi.string().regex(/.+\.(jpg|bmp|png|gif)\b/).required()
+});
+
+function loadCards() {
+  var file = fs.readFileSync('./cards.json');
+  return JSON.parse(file.toString());
+}
+
+function mapImages() {
+  return fs.readdirSync('./public/images/cards');
+}
+
+let cards = loadCards();
 
 function saveCard(card) {
   let id = uuid.v1();
@@ -24,26 +44,33 @@ function saveCard(card) {
 
 function newCardHandler(request, reply) {
   if (request.method === 'get') {
-    reply.view('new');
+    reply.view('new', { card_images: mapImages() });
   } else {
-    var card = {
-      name: request.payload.name,
-      recipientEmail: request.payload.recipientEmail,
-      senderName: request.payload.senderName,
-      senderEmail: request.payload.senderEmail,
-      cardImage: request.payload.cardImage
-    };
-    saveCard(card);
-    reply.redirect('/cards');
+    Joi.validate(request.payload, cardSchema, function(err, val) {
+      if (err) {
+        return reply(Boom.badRequest(err.details[0].message));
+      }
+      var card = {
+        name: val.name,
+        recipientEmail: val.recipientEmail,
+        senderName: val.senderName,
+        senderEmail: val.senderEmail,
+        cardImage: val.cardImage
+      };
+      saveCard(card);
+      reply.redirect('/cards');
+    });
+
   }
 }
 
 function cardsHandler(request, reply) {
-  reply.view('cards');
+  reply.view('cards', {cards: cards});
 }
 
 function deleteCardHandler(request, reply) {
   delete cards[request.params.id];
+  reply();
 }
 
 server.connection({port: 3000});
@@ -105,6 +132,12 @@ server.ext('onRequest', (request, reply) => {
   reply.continue();
 });
 
+server.ext('onPreResponse', (request, reply) => {
+  if (request.response.isBoom) {
+    return reply.view('error', request.response);
+  }
+  reply.continue();
+});
 
 server.start((err) => {
   if (err) { throw err; }
