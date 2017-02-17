@@ -127,9 +127,50 @@ server.register(require('vision'), (err) => {
 
 server.register(Inert, () => {});
 
-server.ext('onRequest', (request, reply) => {
-  console.log(`Request received: ${request.path}`);
-  reply.continue();
+server.register({
+  register: require('good'),
+  options: {
+    ops: {
+      interval: 5000
+    },
+    reporters: {
+      processReporter: [{
+        module: 'good-squeeze',
+        name: 'Squeeze',
+        args: [{ ops: '*' }]
+      }, {
+        module: 'good-squeeze',
+        name: 'SafeJson'
+      }, {
+        module: 'good-file',
+        args: ['./logs/process.log']
+      }],
+      responseReporter: [{
+        module: 'good-squeeze',
+        name: 'Squeeze',
+        args: [{ response: '*' }]
+      }, {
+        module: 'good-squeeze',
+        name: 'SafeJson'
+      }, {
+        module: 'good-file',
+        args: ['./logs/response.log']
+      }],
+      errorReporter: [{
+        module: 'good-squeeze',
+        name: 'Squeeze',
+        args: [{ error: '*' }]
+      }, {
+        module: 'good-squeeze',
+        name: 'SafeJson'
+      }, {
+        module: 'good-file',
+        args: ['./logs/error.log']
+      }]
+    }
+  }
+}, function(err){
+  console.log(err);
 });
 
 server.ext('onPreResponse', (request, reply) => {
