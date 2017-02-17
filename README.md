@@ -3,10 +3,13 @@ HapiJS web application
 
 ## Features
 
-* Create/List/Destroy birthday cards
+* Create/List/Destroy Birthday Cards
 * User Registration
-* User Logging in / Logging out
+* User Logging In / Logging Out
 * Form Validations
+* File Uploads
+* Send Emails
+
 
 ## Libraries:
 
